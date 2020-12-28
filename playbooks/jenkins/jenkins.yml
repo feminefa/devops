@@ -4,45 +4,59 @@
   remote_user: azureuser
   become: true
   tasks: 
-    - name: install nginx
-      apt:
-        name: nginx
-        state: latest
-    - name: run nginx
-      service:
-        name: nginx
-        state: started
-    - name: install openjdk
-      apt:
-        name: openjdk-8-jre
-        state: latest
-    - name: Download Jenkins Package
-      shell: wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
-    - name: Add Jenkins binary to source list
-      shell: sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-    #- name: Update apt
-    # shell: sudo apt update
-    - name: Install Jenkins
-      apt:
-        name: jenkins
-        state: latest
-        update_cache: yes
-    - name: run jenkins
-      service:
-        name: jenkins
-        state: started
+    # - name: install nginx
+    #   apt:
+    #     name: nginx
+    #     state: latest
+    # - name: run nginx
+    #   service:
+    #     name: nginx
+    #     state: started
+    # - name: install openjdk
+    #   apt:
+    #     name: openjdk-8-jre
+    #     state: latest
+    # - name: Download Jenkins Package
+    #   shell: wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+    # - name: Add Jenkins binary to source list
+    #   shell: sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+    # #- name: Update apt
+    # # shell: sudo apt update
+    # - name: Install Jenkins
+    #   apt:
+    #     name: jenkins
+    #     state: latest
+    #     update_cache: yes
+    # - name: run jenkins
+    #   service:
+    #     name: jenkins
+    #     state: started
     #install letsencrypt
+    # - name: Setup Nginx
+    #   shell: "data=$(curl https://raw.githubusercontent.com/feminefa/devops/main/playbooks/jenkins/nginx-proxy.conf)  
+    #   && echo ${data//server-name/{{ domain_name }}}  > /etc/nginx/sites-available/jenkins.conf"
+
     - name: Setup Nginx
-      shell: 'configFile = $(curl '
+      shell: "replacement={{ domain_name }} && \
+      result=$(curl https://raw.githubusercontent.com/feminefa/devops/main/playbooks/jenkins/nginx-proxy.conf \
+       | sed \"s/%server-name%/$replacement/g\") && \
+       echo \"$result\" > /etc/nginx/sites-available/jenkins.conf && \
+       ln -sf /etc/nginx/sites-available/jenkins.conf /etc/nginx/sites-enabled/jenkins.conf && \
+       /etc/init.d/nginx configtest
+       "
+      #echo ${data//server-name/femi}"
+      register: out
+    - debug: var=out.stdout_lines
+
     - name: Add certbot ppa
-      shell: sudo add-apt-repository ppa:certbot/certbot
+      command: sudo add-apt-repository -y ppa:certbot/certbot
     - name: Install Certbot
       apt:
         name: python-certbot-nginx
         state: latest
         update_cache: yes
     - name: Issue certificate
-      shell: sudo certbot --nginx -d {{ domain-name }} && sudo certbot renew --dry-run
+      shell: sudo certbot --nginx -d {{ domain_name }} && sudo certbot renew --dry-run
     
 
 
