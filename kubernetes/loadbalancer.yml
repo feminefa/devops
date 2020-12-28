@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: stemuli-kubernetes-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  defaultBackend:
+    resource:
+      apiGroup: devAPI
+      serviceName: StorageBucket
+      servicePort: 80
+  tls:
+  - hosts:
+    - apiv2.stemuli.net
+ #   - apidev2.stemuli.net
+    secretName: stemuli-dev-kubernetes-tls
+  rules:
+  - host: apiv2.stemuli.net
+    http:
+      paths:
+      - path: /
+          backend:
+          serviceName: myservicea
+          servicePort: 80
+  #- host: hw2.your_domain
+  #  http:
+  #    paths:
+  #    - backend:
+  #        serviceName: hello-kubernetes-second
+  #        servicePort: 80

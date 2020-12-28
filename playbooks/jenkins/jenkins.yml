@@ -1,0 +1,48 @@
+---
+- name: jenkins
+  hosts: stemuli-jenkins
+  remote_user: azureuser
+  become: true
+  tasks: 
+    - name: install nginx
+      apt:
+        name: nginx
+        state: latest
+    - name: run nginx
+      service:
+        name: nginx
+        state: started
+    - name: install openjdk
+      apt:
+        name: openjdk-8-jre
+        state: latest
+    - name: Download Jenkins Package
+      shell: wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo apt-key add -
+    - name: Add Jenkins binary to source list
+      shell: sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+    #- name: Update apt
+    # shell: sudo apt update
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: latest
+        update_cache: yes
+    - name: run jenkins
+      service:
+        name: jenkins
+        state: started
+    #install letsencrypt
+    - name: Setup Nginx
+      shell: 'configFile = $(curl '
+    - name: Add certbot ppa
+      shell: sudo add-apt-repository ppa:certbot/certbot
+    - name: Install Certbot
+      apt:
+        name: python-certbot-nginx
+        state: latest
+        update_cache: yes
+    - name: Issue certificate
+      shell: sudo certbot --nginx -d {{ domain-name }} && sudo certbot renew --dry-run
+    
+
+
